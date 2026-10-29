@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>北海道的北海道</title>
+    <!-- 引入 SortableJS 確保手機端可以順暢拖曳排序 -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: 'PingFang TC', '微軟正黑體', sans-serif;
+            background-color: #F4F9FF; /* Very light baby blue */
+            color: #334155; /* Dark grey/blue */
+            margin: 0;
+            padding: 20px 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: #FFFFFF;
+            border: 2px solid #BFE2FF; /* Light blue borders */
+            border-radius: 20px;
+            padding: 30px 20px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 4px 15px rgba(191, 226, 255, 0.3);
+            text-align: center;
+            margin-top: 2vh;
+            position: relative;
+        }
+        
+        /* 共用按鈕樣式 */
+        .btn-main, .date-btn, .option-btn, .btn-outline {
+            background-color: #FFFFFF;
+            color: #334155;
+            border: 2px solid #BFE2FF;
+            border-radius: 15px;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        .btn-main {
+            margin-top: 20px;
+            background-color: #F4F9FF;
+        }
+        .btn-main:active, .date-btn:active, .option-btn:active, .btn-outline:active {
+            background-color: #BFE2FF;
+            transform: scale(0.98);
+        }
+        
+        /* 首頁封面文字 */
+        .cover-text {
+            font-size: 16px;
+            line-height: 1.8;
+            margin-bottom: 25px;
+            text-align: center;
+            white-space: pre-wrap; /* 保留換行符號 */
+            color: #334155;
+            font-weight: 500;
+        }
+
+        /* 日期網格 */
+        .date-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        /* 返回按鈕 (左上角文字版) */
+        .back-link {
+            text-align: left;
+            margin-bottom: 15px;
+            display: inline-block;
+            cursor: pointer;
+            color: #7DD3FC;
+            font-weight: bold;
+            font-size: 15px;
+            transition: 0.2s;
+        }
+        .back-link:active {
+            color: #38BDF8;
+        }
+
+        /* 題目區塊 */
+        .question-text {
+            font-size: 17px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            line-height: 1.6;
+            text-align: left;
+        }
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .option-btn {
+            text-align: left;
+            font-weight: normal;
+        }
+
+        /* 拖曳排序清單 */
+        .sortable-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .sortable-item {
+            background-color: #FFFFFF;
+            border: 2px dashed #BFE2FF;
+            border-radius: 15px;
+            padding: 15px;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            color: #334155;
+            touch-action: none; /* 讓手機拖曳更順 */
+        }
+        .sortable-item::before {
+            content: '≡';
+            margin-right: 15px;
+            color: #93C5FD;
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        /* 隱藏區塊 */
+        #screen-dates, #screen-question, #screen-updating, #screen-result {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="app-container">
+    
+    <!-- 1. 首頁封面 -->
+    <div id="screen-cover">
+        <h1 style="color:#334155; margin-top:0; font-size: 24px;">北海道的北海道⛄️</h1>
+        <div class="cover-text">小寶🤍 
+我要停止內耗出發北海道囉❄️ 
+雖然你不在但我會很想你的～❤️ 
+出國的這幾天，我拍照跟你分享的！
+等我回臺灣 🇹🇼
+
+準備好和我一起出發了嗎？</div>
+        <button class="btn-main" onclick="showScreen('screen-dates')">開始連線！</button>
+    </div>
+
+    <!-- 2. 日期選擇畫面 -->
+    <div id="screen-dates">
+        <h2 style="color:#334155; margin-top:0;">今天是～</h2>
+        <div class="date-grid" id="date-buttons-container">
+            <!-- 由 JS 動態生成按鈕 -->
+        </div>
+        <button class="btn-outline" style="margin-top: 30px;" onclick="showScreen('screen-cover')">返回首頁</button>
+    </div>
+
+    <!-- 3. 問題畫面 -->
+    <div id="screen-question">
+        <div style="text-align: left;">
+            <span class="back-link" onclick="goBackFromQuestion()">⬅ 返回上一頁</span>
+        </div>
+        <div class="question-text" id="q-text"></div>
+        <div class="options-container" id="options-container"></div>
+    </div>
+
+    <!-- 4. 更新中畫面 -->
+    <div id="screen-updating">
+        <h2 style="color:#334155;">施工中</h2>
+        <p style="margin: 30px 0; line-height: 1.6;">這天的日記還在路上喔！敬請期待 ✨</p>
+        <button class="btn-outline" onclick="showScreen('screen-dates')">返回日期列表</button>
+    </div>
+
+    <!-- 5. 結算畫面 -->
+    <div id="screen-result">
+        <h2 style="color:#334155;">今天的連線完成囉！</h2>
+        <div style="margin-top: 30px; display: flex; flex-direction: column; gap: 15px;">
+            <button id="line-btn" class="btn-main" style="margin-top: 0; background-color: #BFE2FF;">複製答案並傳送 LINE</button>
+            <button class="btn-outline" onclick="showScreen('screen-dates')">期待下一天</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // 完全依照最新的含 emoji 版本
+    const questionsData = {
+        "10/30": [
+            { q: "Day 1 (10/30)\nQ1. 今天出發去北海道❄️ 你知道我搭什麼航空嗎？", options: ["星宇航空", "廉航", "長榮", "寶寶不知道..."] },
+            { q: "Day 1 (10/30)\nQ2. 我們以後一起出國，寶寶想坐…？✈️", options: ["搭傳統航空，位子大還有飛機餐跟電影", "廉航就好，省下來的錢拿去吃好料跟買東西", "我都可以！"] },
+            { q: "Day 1 (10/30)\nQ3. 我們很有可能會雪駕餒，我們要出國的話你會傾向大眾交通工具還是租車～～🚗", options: ["可以租車一起當俠盜獵車手", "國外開車小小不確定 要看看", "完全沒有想開車餒 先大眾交通就好"] },
+            { q: "Day 1 (10/30)\nQ4. 我今晚入住「第一瀧本館」，這裡有超浮誇的 35 種溫泉浴池！♨️如果你也在，寶寶會？", options: ["把 35 種浴池全部泡過一遍，泡回本！", "泡溫泉什麼的我其實還好", "只泡有興趣的 我可是有堅持的", "我泡一半（$45?？）"] }
+        ],
+        "10/31": [
+            { q: "Day 2 (10/31)\nQ1. 今天要去地獄谷，需要走不少路！旅遊的小寶可以接受行軍的行程嗎？🪖（雖然好像問過了", options: ["可以！我們一起去行軍", "可以走，但中途需要餵食跟喝飲料", "走 15 分鐘就想找地方小休了", "我是交通工具派，能搭車絕對不走路"] },
+            { q: "Day 2 (10/31)\nQ2. 今天應該會去搭纜車 去有珠山展望台！小寶喜歡怎麼樣的旅行？", options: ["美食為主，吃到美食才甘願", "景點為主，風景照拍好拍滿", "飯店為主，想要好好享受設施", "我全都要！"] },
+            { q: "Day 2 (10/31)\nQ3. 洞爺湖附近有超多美食！你最想吃哪一種？", options: ["湯咖哩", "洋食漢堡排", "去便利商店爆買零食回飯店吃", "各種生魚片海鮮"] },
+            { q: "Day 2 (10/31)\nQ4. 今晚我會搭船看洞爺湖煙火！寶寶嚮往的看煙火情境是？", options: ["房間好了 看得到煙火又可以好好休息", "肯定是日本的呀 超浪漫的", "沒有特別喜歡餒 偏吵人偏多", "以上皆是"] },
+            { q: "Day 2 (10/31)\nQ5. 週末的夜晚，雖然我們隔著海，小寶現在最想跟我說什麼？", options: ["玩得開心點！", "有想我嗎？", "好想妳", "我要一半"] }
+        ],
+        "11/1": [
+            { q: "Day 3 (11/1)\nQ1. 早上要去買超有名的義式冰淇淋！冬天的寶寶最想要做什麼？⛄️", options: ["吃各種火鍋、鍋類 吃完就會很溫暖🥰", "裹在被子裡", "去日本滑雪", "吃冰淇淋"] },
+            { q: "Day 3 (11/1)\nQ2. 下午預計去大沼公園買有名的糰子！我超愛~ 小寶最喜歡什麼QQ食物？🍡", options: ["粉粿", "珍珠", "糰子", "麻糬"] },
+            { q: "Day 3 (11/1)\nQ3. 今晚預計會在函館市區覓食！吃壽司，小寶最喜歡去哪種類型的店呢？", options: ["迴轉壽司", "無菜單日式料理店", "市場的立吞/海鮮攤位", "買外帶盒裝回房間配啤酒輕鬆吃"] },
+            { q: "Day 3 (11/1)\nQ4. 函館真的好多海鮮，寶寶最喜歡的生魚片排名！🍣（拖曳排序 1 到 4 名）", type: "sortable", options: ["肯定要鮭魚", "甜蝦之類的蝦", "超厲害鮪魚大腹", "更愛炙燒系列"] },
+            { q: "Day 3 (11/1)\nQ5. 明天又要上班了，小寶加油！🥺不過這個週末我們就可以見面囉！假日見面時，小寶最想要做什麼，我來安排？", options: ["一起出去走走散步", "在房間裡聊天", "去吃一頓好吃的東西", "我全都要"] }
+        ],
+        "11/2": [
+            { q: "Day 4 (11/2)\nQ1. 早上去了星形的五稜郭公園，這裡充滿了歷史感！小寶出國最喜歡去哪種類型的景點呢？", options: ["歷史城堡與古蹟類", "大自然風景類", "百貨商圈類，就是要逛街血拼吃美食", "沒特別 都可以"] },
+            { q: "Day 4 (11/2)\nQ2. 下午逛了金森紅磚倉庫，這裡有好多好吃的甜點！如果讓小寶選，最喜歡哪種類型的甜點呢？", options: ["濃郁綿密的起司蛋糕", "泡芙或派", "巧克力蛋糕", "布丁系列"] },
+            { q: "Day 4 (11/2)\nQ3. 今晚要去看傳說中的百萬夜景了！其實我本來沒有很懂夜景，但上次的土地公夜景我很喜歡❤️", options: ["這裡好美喔", "妳比夜景還美", "風好大，我們趕快下山去吃宵夜", "週末見！"] }
+        ],
+        "11/3": [
+            { q: "Day 5 (11/3)\nQ1. 今天開了超久的車，來到羊蹄山名水公園裝天然泉水！小寶出門玩喜歡這種接觸大自然的行程嗎？", options: ["超愛！可以吸收芬多精", "偶爾可以，太常會覺得累", "比較喜歡逛街吹冷氣", "去哪裡都好"] },
+            { q: "Day 5 (11/3)\nQ2. 今天換住進小樽的飯店囉！小寶覺得住飯店最期待什麼設施？", options: ["軟綿綿、超級好睡的大床", "種類超多的自助早餐", "很大的浴缸可以好好泡澡", "晚上的飯店酒吧或大廳"] },
+            { q: "Day 5 (11/3)\nQ3. 晚餐預計去吃小樽非常有名的「炸半雞」！如果讓小寶選，你最喜歡哪一種口味的炸雞呢？", options: ["傳統的薄皮炸雞", "酥脆的咔啦脆皮炸雞", "甜辣的韓式炸雞", "只要是肉我都愛！"] }
+        ]
+    };
+
+    const allDates = ["10/30", "10/31", "11/1", "11/2", "11/3", "11/4", "11/5", "11/6"];
+    let activeDate = "";
+    let currentQIndex = 0;
+    let currentAnswers = [];
+    let sortableInstance = null;
+
+    // 初始化日期按鈕
+    const dateContainer = document.getElementById("date-buttons-container");
+    allDates.forEach(date => {
+        let btn = document.createElement("button");
+        btn.className = "date-btn";
+        btn.innerText = date;
+        btn.onclick = () => selectDate(date);
+        dateContainer.appendChild(btn);
+    });
+
+    function showScreen(screenId) {
+        document.getElementById("screen-cover").style.display = "none";
+        document.getElementById("screen-dates").style.display = "none";
+        document.getElementById("screen-question").style.display = "none";
+        document.getElementById("screen-updating").style.display = "none";
+        document.getElementById("screen-result").style.display = "none";
+        
+        document.getElementById(screenId).style.display = "block";
+    }
+
+    function selectDate(date) {
+        activeDate = date;
+        currentQIndex = 0;
+        currentAnswers = [];
+        
+        if (questionsData[date] && questionsData[date].length > 0) {
+            showScreen("screen-question");
+            renderQuestion();
+        } else {
+            showScreen("screen-updating");
+        }
+    }
+
+    // 處理問答頁面的「返回上一頁」邏輯
+    function goBackFromQuestion() {
+        if (currentQIndex > 0) {
+            // 退回上一題
+            currentQIndex--;
+            currentAnswers.pop(); // 移除上一題的答案紀錄
+            renderQuestion();
+        } else {
+            // 如果是第一題，退回日期選單
+            showScreen('screen-dates');
+        }
+    }
+
+    function renderQuestion() {
+        let qList = questionsData[activeDate];
+        if (currentQIndex >= qList.length) {
+            showDayResult();
+            return;
+        }
+
+        let qData = qList[currentQIndex];
+        const qText = document.getElementById("q-text");
+        const optionsContainer = document.getElementById("options-container");
+        
+        // 替換換行符為 <br>
+        qText.innerHTML = qData.q.replace(/\n/g, '<br>');
+        optionsContainer.innerHTML = "";
+        
+        if (sortableInstance) {
+            sortableInstance.destroy();
+            sortableInstance = null;
+        }
+
+        if (qData.type === "sortable") {
+            let ul = document.createElement("ul");
+            ul.className = "sortable-list";
+            ul.id = "sortable-list-id";
+            
+            qData.options.forEach((opt) => {
+                let li = document.createElement("li");
+                li.className = "sortable-item";
+                li.innerText = opt;
+                ul.appendChild(li);
+            });
+            
+            optionsContainer.appendChild(ul);
+            
+            // 啟用手機支援的 SortableJS
+            sortableInstance = new Sortable(ul, {
+                animation: 150,
+                ghostClass: 'sortable-ghost'
+            });
+
+            let confirmBtn = document.createElement("button");
+            confirmBtn.className = "btn-main";
+            confirmBtn.innerText = "確定排序";
+            confirmBtn.onclick = () => {
+                let sortedItems = [...ul.querySelectorAll('.sortable-item')].map((li, i) => `${i+1}. ${li.innerText}`);
+                currentAnswers.push(`${qData.q}\n${sortedItems.join('\n')}`);
+                currentQIndex++;
+                renderQuestion();
+            };
+            optionsContainer.appendChild(confirmBtn);
+
+        } else {
+            qData.options.forEach((opt) => {
+                let btn = document.createElement("button");
+                btn.className = "option-btn";
+                btn.innerText = opt;
+                btn.onclick = () => {
+                    currentAnswers.push(`${qData.q}\n👉 ${opt}`);
+                    currentQIndex++;
+                    renderQuestion();
+                };
+                optionsContainer.appendChild(btn);
+            });
+        }
+    }
+
+    function showDayResult() {
+        showScreen("screen-result");
+        const lineBtn = document.getElementById("line-btn");
+        let msg = `💌 小寶的北海道連線 (${activeDate}) 💌\n\n` + currentAnswers.join("\n\n");
+        
+        lineBtn.onclick = function() {
+            // 建立一個隱藏的 textarea 來執行複製動作
+            const textArea = document.createElement("textarea");
+            textArea.value = msg;
+            document.body.appendChild(textArea);
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                alert("✅ 答案已經幫你複製好囉！\n\n現在為你轉跳到 LINE 🚀\n（如果沒有自動轉跳，你可以直接去 LINE 貼上！）");
+            } catch (err) {
+                console.error('複製失敗', err);
+            }
+            document.body.removeChild(textArea);
+
+            // 嘗試轉跳到 LINE
+            window.open("https://line.me/R/msg/text/?" + encodeURIComponent(msg), "_blank");
+        };
+    }
+</script>
+
+</body>
+</html>
